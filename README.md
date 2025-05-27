@@ -1,3 +1,62 @@
+# 🚀 AgentScope 快速启动项目
+
+一个简化的AgentScope使用项目，包含命令行交互和可视化界面两种使用方式。
+
+## 📁 项目结构
+
+```
+agentscope/
+├── start_agentscope.py      # 命令行交互脚本
+├── chat_with_studio.py      # Studio可视化测试脚本
+├── 快速启动指南.md          # 详细使用指南
+├── README.md               # 项目说明
+└── examples/               # 官方示例代码
+```
+
+## ⚡ 快速开始
+
+### 方式一：命令行对话
+```bash
+python3 start_agentscope.py
+```
+
+### 方式二：可视化界面
+```bash
+# 1. 启动可视化服务
+as_studio
+
+# 2. 运行连接脚本
+python3 chat_with_studio.py
+```
+
+## 📖 详细文档
+
+查看 [快速启动指南.md](./快速启动指南.md) 获取完整的使用说明。
+
+## 🔧 环境要求
+
+- Python 3.9+
+- AgentScope 0.1.4+
+- 阿里云DashScope API密钥（已预配置）
+
+## 🎯 主要特性
+
+- ✅ **即开即用** - 预配置API密钥，无需额外设置
+- ✅ **双模式支持** - 命令行 + 可视化界面
+- ✅ **完善文档** - 详细的使用指南和故障排除
+- ✅ **错误处理** - 友好的错误提示和解决方案
+
+## 📞 支持
+
+如有问题，请参考：
+1. [快速启动指南.md](./快速启动指南.md) - 完整使用说明
+2. [官方文档](https://doc.agentscope.io/) - AgentScope官方文档
+3. [GitHub仓库](https://github.com/modelscope/agentscope) - 源码和问题反馈
+
+---
+
+🎊 **开始您的AI对话之旅！**
+
 [**中文主页**](https://github.com/modelscope/agentscope/blob/main/README_ZH.md) | [**日本語のホームページ**](https://github.com/modelscope/agentscope/blob/main/README_JA.md) | [**Tutorial**](https://doc.agentscope.io/) | [**Roadmap**](https://github.com/modelscope/agentscope/blob/main/docs/ROADMAP.md) | [**FAQ**](https://doc.agentscope.io/tutorial/faq.html)
 
 <h2 align="center">AgentScope: Agent-Oriented Programming for Building LLM Applications</h2>

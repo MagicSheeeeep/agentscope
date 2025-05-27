@@ -70,6 +70,28 @@ def test_studio_connection():
         print("✅ AgentScope 初始化成功！")
         print("📊 已连接到Studio，可视化界面将显示对话过程")
         
+        # 从最新的runs目录获取运行ID
+        import os
+        import glob
+        runs_dir = "runs"
+        if os.path.exists(runs_dir):
+            run_dirs = glob.glob(os.path.join(runs_dir, "run_*"))
+            if run_dirs:
+                latest_run_dir = max(run_dirs, key=os.path.getmtime)
+                run_id = os.path.basename(latest_run_dir)
+                studio_url = f"http://localhost:3000/?run_id={run_id}"
+                
+                print(f"\n🎯 重要：请访问专用URL查看可视化界面：")
+                print(f"📱 {studio_url}")
+                print("⚠️  注意：不是普通的 http://localhost:3000")
+                print("💡 请复制上面的完整URL到浏览器中打开")
+            else:
+                studio_url = "http://localhost:3000"
+                print(f"\n📱 Studio界面地址: {studio_url}")
+        else:
+            studio_url = "http://localhost:3000"
+            print(f"\n📱 Studio界面地址: {studio_url}")
+        
         # 创建对话代理
         dialog_agent = DialogAgent(
             name="Studio测试助手",
@@ -77,36 +99,48 @@ def test_studio_connection():
             sys_prompt="你是AgentScope Studio的测试助手，请简洁地回答问题，并说明这是在测试可视化界面。"
         )
         
-        # 创建用户代理
-        user_agent = UserAgent(name="测试用户")
-        
-        print(f"\n📱 Studio界面地址: http://localhost:3000")
-        print("💡 请在浏览器中打开上述地址查看可视化效果")
         print("\n💬 开始测试对话（输入 'exit' 退出）:")
         print("🤖 Studio测试助手: 你好！我是AgentScope Studio测试助手，现在我们的对话会在可视化界面中实时显示。")
         print("-" * 60)
         
         # 对话循环
-        x = None
+        from agentscope.message import Msg
         conversation_count = 0
         
         while True:
             try:
                 # 用户输入
-                x = user_agent(x)
+                user_input = input("\n👤 您: ").strip()
                 
                 # 检查退出条件
-                if x.content.lower() in ["exit", "quit", "退出", "结束"]:
+                if user_input.lower() in ["exit", "quit", "退出", "结束"]:
                     print("\n👋 Studio测试结束！")
                     break
+                
+                if not user_input:
+                    print("⚠️ 请输入内容，或输入 'exit' 退出")
+                    continue
                 
                 conversation_count += 1
                 print(f"\n[第{conversation_count}轮对话 - Studio可视化中]")
                 
+                # 创建用户消息
+                user_msg = Msg("user", user_input, "user")
+                
                 # AI回复
                 print("🤖 AI正在思考（请查看Studio界面的实时显示）...")
-                x = dialog_agent(x)
-                print(f"🤖 Studio测试助手: {x.content}")
+                response = dialog_agent(user_msg)
+                
+                # 处理可能的编码问题
+                try:
+                    response_text = response.content
+                    # 清理可能导致编码问题的字符
+                    response_text = response_text.encode('utf-8', errors='ignore').decode('utf-8')
+                    print(f"🤖 Studio测试助手: {response_text}")
+                except Exception as encoding_error:
+                    print(f"🤖 Studio测试助手: [回复包含特殊字符，显示可能不完整]")
+                    print(f"   编码错误: {encoding_error}")
+                
                 print("📊 此对话已同步到Studio可视化界面")
                 print("-" * 60)
                 
@@ -120,7 +154,8 @@ def test_studio_connection():
         print(f"\n📊 测试统计:")
         print(f"   - 对话轮数: {conversation_count}")
         print(f"   - Studio连接: ✅ 成功")
-        print(f"   - 可视化界面: http://localhost:3000")
+        print(f"   - 可视化界面: {studio_url}")
+        print(f"💡 请确保访问带有run_id的专用URL查看可视化效果")
         
         return True
         
@@ -159,10 +194,18 @@ def run_demo_conversation():
             print(f"👤 用户: {question}")
             
             # 创建消息并获取回复
-            msg = Msg("user", question, "demo_user")
+            msg = Msg("user", question, "user")
             response = dialog_agent(msg)
             
-            print(f"🤖 演示助手: {response.content}")
+            # 处理可能的编码问题
+            try:
+                response_text = response.content
+                response_text = response_text.encode('utf-8', errors='ignore').decode('utf-8')
+                print(f"🤖 演示助手: {response_text}")
+            except Exception as encoding_error:
+                print(f"🤖 演示助手: [回复包含特殊字符，显示可能不完整]")
+                print(f"   编码错误: {encoding_error}")
+            
             print("📊 请查看Studio界面中的可视化效果")
             
             # 短暂暂停，便于观察
