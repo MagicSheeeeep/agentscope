@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AgentScope 命令行交互脚本
+AgentScope 命令行交互脚本（修复版）
 直接通过命令行与大模型对话
 """
 
 import agentscope
-from agentscope.agents import DialogAgent, UserAgent
+from agentscope.agents import DialogAgent
+from agentscope.message import Msg
 
 # 阿里云DashScope配置
 MODEL_CONFIG = [
@@ -24,7 +25,7 @@ MODEL_CONFIG = [
 
 def main():
     """主函数：命令行对话"""
-    print("🚀 AgentScope 命令行对话")
+    print("🚀 AgentScope 命令行对话（修复版）")
     print("=" * 50)
     
     try:
@@ -88,7 +89,6 @@ def main():
                 conversation_count += 1
                 
                 # 创建用户消息
-                from agentscope.message import Msg
                 user_msg = Msg("user", user_input, "user")
                 
                 # AI回复
@@ -107,12 +107,22 @@ def main():
         
         print(f"\n📊 本次对话共进行了 {conversation_count} 轮")
         
+        # 最终显示Studio URL
+        if os.path.exists(runs_dir):
+            run_dirs = glob.glob(os.path.join(runs_dir, "run_*"))
+            if run_dirs:
+                latest_run_dir = max(run_dirs, key=os.path.getmtime)
+                run_id = os.path.basename(latest_run_dir)
+                studio_url = f"http://localhost:3000/dashboard?run_id={run_id}"
+                print(f"🎯 查看完整对话记录: {studio_url}")
+        
     except Exception as e:
         print(f"❌ 初始化失败: {e}")
         print("\n🔧 可能的解决方案:")
         print("1. 检查API密钥是否正确")
         print("2. 确认网络连接正常")
         print("3. 检查账户余额是否充足")
+        print("4. 确保AgentScope Studio正在运行: as_studio")
 
 if __name__ == "__main__":
     main() 

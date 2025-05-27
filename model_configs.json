@@ -1,0 +1,61 @@
+[
+  {
+    "config_name": "general_assistant",
+    "model_type": "dashscope_chat",
+    "model_name": "qwen-max",
+    "api_key": "your_dashscope_api_key_here",
+    "generate_args": {
+      "temperature": 0.7,
+      "max_tokens": 2000
+    }
+  },
+  {
+    "config_name": "tech_expert",
+    "model_type": "dashscope_chat",
+    "model_name": "qwen-turbo",
+    "api_key": "your_dashscope_api_key_here",
+    "generate_args": {
+      "temperature": 0.5,
+      "max_tokens": 2000
+    }
+  },
+  {
+    "config_name": "creative_assistant",
+    "model_type": "dashscope_chat",
+    "model_name": "qwen-plus",
+    "api_key": "your_dashscope_api_key_here",
+    "generate_args": {
+      "temperature": 0.9,
+      "max_tokens": 2000
+    }
+  },
+  {
+    "config_name": "openai_gpt4",
+    "model_type": "openai_chat",
+    "model_name": "gpt-4",
+    "api_key": "your_openai_api_key_here",
+    "generate_args": {
+      "temperature": 0.7,
+      "max_tokens": 2000
+    }
+  },
+  {
+    "config_name": "openai_gpt35",
+    "model_type": "openai_chat",
+    "model_name": "gpt-3.5-turbo",
+    "api_key": "your_openai_api_key_here",
+    "generate_args": {
+      "temperature": 0.8,
+      "max_tokens": 2000
+    }
+  },
+  {
+    "config_name": "local_llama",
+    "model_type": "ollama_chat",
+    "model_name": "llama2",
+    "host": "http://localhost:11434",
+    "generate_args": {
+      "temperature": 0.7
+    }
+  }
+] 

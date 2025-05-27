@@ -79,24 +79,27 @@ def test_studio_connection():
             if run_dirs:
                 latest_run_dir = max(run_dirs, key=os.path.getmtime)
                 run_id = os.path.basename(latest_run_dir)
-                studio_url = f"http://localhost:3000/?run_id={run_id}"
+                # 使用正确的 dashboard URL 格式
+                studio_url = f"http://localhost:3000/dashboard?run_id={run_id}"
+                dashboard_main = "http://localhost:3000/dashboard"
                 
-                print(f"\n🎯 重要：请访问专用URL查看可视化界面：")
-                print(f"📱 {studio_url}")
-                print("⚠️  注意：不是普通的 http://localhost:3000")
-                print("💡 请复制上面的完整URL到浏览器中打开")
+                print(f"\n🎯 重要：请访问以下正确的URL查看可视化界面：")
+                print(f"📱 方式1 - 直接访问: {studio_url}")
+                print(f"📱 方式2 - Dashboard: {dashboard_main}")
+                print("⚠️  注意：使用 /dashboard 路径，避免重定向问题")
+                print("💡 请复制上面的URL到浏览器中打开")
             else:
-                studio_url = "http://localhost:3000"
+                studio_url = "http://localhost:3000/dashboard"
                 print(f"\n📱 Studio界面地址: {studio_url}")
         else:
-            studio_url = "http://localhost:3000"
+            studio_url = "http://localhost:3000/dashboard"
             print(f"\n📱 Studio界面地址: {studio_url}")
         
         # 创建对话代理
         dialog_agent = DialogAgent(
-            name="Studio测试助手",
+            name="通义千问助手",
             model_config_name="qwen_turbo",
-            sys_prompt="你是AgentScope Studio的测试助手，请简洁地回答问题，并说明这是在测试可视化界面。"
+            sys_prompt="你是通义千问(qwen-turbo)，由阿里巴巴开发的大语言模型。你正在通过AgentScope框架运行，连接到阿里云DashScope API。当前正在测试AgentScope Studio的可视化功能。请诚实回答用户的问题。"
         )
         
         print("\n💬 开始测试对话（输入 'exit' 退出）:")
@@ -129,17 +132,23 @@ def test_studio_connection():
                 
                 # AI回复
                 print("🤖 AI正在思考（请查看Studio界面的实时显示）...")
-                response = dialog_agent(user_msg)
-                
-                # 处理可能的编码问题
                 try:
-                    response_text = response.content
-                    # 清理可能导致编码问题的字符
-                    response_text = response_text.encode('utf-8', errors='ignore').decode('utf-8')
-                    print(f"🤖 Studio测试助手: {response_text}")
-                except Exception as encoding_error:
-                    print(f"🤖 Studio测试助手: [回复包含特殊字符，显示可能不完整]")
-                    print(f"   编码错误: {encoding_error}")
+                    response = dialog_agent(user_msg)
+                    
+                    # 处理可能的编码问题
+                    if hasattr(response, 'content'):
+                        response_text = str(response.content)
+                        # 清理可能导致编码问题的字符
+                        response_text = response_text.encode('utf-8', errors='replace').decode('utf-8')
+                        # 移除代理字符
+                        response_text = ''.join(char for char in response_text if ord(char) < 0xD800 or ord(char) > 0xDFFF)
+                        print(f"🤖 Studio测试助手: {response_text}")
+                    else:
+                        print(f"🤖 Studio测试助手: {response}")
+                        
+                except Exception as e:
+                    print(f"❌ AI回复时发生错误: {e}")
+                    print("🤖 Studio测试助手: [AI回复出现问题，请重试]")
                 
                 print("📊 此对话已同步到Studio可视化界面")
                 print("-" * 60)
@@ -223,15 +232,7 @@ def main():
     
     # 测试Studio连接
     if test_studio_connection():
-        print("\n🎉 Studio连接测试成功！")
-        
-        # 询问是否运行演示
-        try:
-            choice = input("\n是否运行自动演示对话？(y/n): ").strip().lower()
-            if choice in ['y', 'yes', '是']:
-                run_demo_conversation()
-        except KeyboardInterrupt:
-            print("\n👋 测试结束")
+        print("\n🎉 Studio连接测试完成！")
     else:
         print("\n❌ Studio连接测试失败")
         print("请先启动AgentScope Studio，然后重新运行此脚本")
