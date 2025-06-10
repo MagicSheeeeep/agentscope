@@ -141,3 +141,6 @@ docs/tutorial/zh_CN/build/
 *runs/
 agentscope.db
 tmp*.json
+.specstory
+# SpecStory explanation file
+.specstory/.what-is-this.md
