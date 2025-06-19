@@ -11,6 +11,7 @@ from agentscope.message import Msg
 from agentscope.strategy import MixtureOfAgents
 from agentscope import msghub
 import time
+import sys
 
 
 def setup_models():
@@ -24,7 +25,8 @@ def setup_models():
             "options": {
                 "temperature": 0.7
             },
-            "keep_alive": "5m"
+            "keep_alive": "5m",
+            "stream": True  # 启用流式输出
         },
         
         # 本地ollama模型2 - deepseek-r1:8b (扮演政治学者)
@@ -35,7 +37,8 @@ def setup_models():
             "options": {
                 "temperature": 0.8
             },
-            "keep_alive": "5m"
+            "keep_alive": "5m",
+            "stream": True  # 启用流式输出
         },
         
         # 阿里云千问模型 (扮演社会学家)
@@ -45,12 +48,68 @@ def setup_models():
             "model_name": "qwen-max",
             "api_key": "sk-cc1605a341c4450489bd71ffc28238c0",  # 请替换为您的真实API密钥
             "generate_args": {
-                "temperature": 0.6
+                "temperature": 0.6,
+                "stream": True  # 启用流式输出
             }
         }
     ]
     
     return model_configs
+
+
+def stream_print(text, delay=0.03):
+    """流式打印文本，模拟打字机效果"""
+    for char in text:
+        print(char, end='', flush=True)
+        time.sleep(delay)
+    print()  # 换行
+
+
+def get_streaming_response(agent, msg):
+    """获取流式响应"""
+    print("正在思考", end="")
+    # 显示思考动画
+    for _ in range(3):
+        print(".", end="", flush=True)
+        time.sleep(0.5)
+    print()
+    
+    # 临时重定向标准输出来捕获agent的自动输出
+    import io
+    import contextlib
+    
+    # 创建一个缓冲区来捕获输出
+    captured_output = io.StringIO()
+    
+    # 使用上下文管理器来捕获输出
+    with contextlib.redirect_stdout(captured_output):
+        response = agent(msg)
+    
+    # 获取被捕获的输出（agent的自动输出）
+    agent_auto_output = captured_output.getvalue()
+    
+    # 从agent的自动输出中提取实际内容（去掉agent名称前缀）
+    content = response.content
+    
+    # 如果响应中包含思考过程标记，先显示思考过程
+    if '<thinking>' in str(content):
+        parts = str(content).split('<thinking>')
+        if len(parts) > 1:
+            thinking_part = parts[1].split('</thinking>')[0]
+            print("🤔 思考过程:")
+            stream_print(thinking_part.strip(), delay=0.02)
+            print()
+            
+            # 显示最终回答
+            final_answer = str(content).split('</thinking>')[-1].strip()
+            if final_answer:
+                stream_print(final_answer, delay=0.03)
+        else:
+            stream_print(str(content), delay=0.03)
+    else:
+        stream_print(str(content), delay=0.03)
+    
+    return response
 
 
 def create_agents(model_configs):
@@ -75,7 +134,8 @@ def create_agents(model_configs):
 - 客观理性，避免意识形态偏见
 
 请用专业的经济学术语和理论分析问题，但保持表达通俗易懂。每次回答控制在200字以内。""",
-        model_config_name="llama_economist"
+        model_config_name="llama_economist",
+        to_print=False  # 禁用自动打印
     )
     
     # 政治学者智能体（使用qwen3:8b）
@@ -91,7 +151,8 @@ def create_agents(model_configs):
 - 严谨客观，基于学术研究
 
 请从政治制度角度分析，关注实施的政治障碍和可能路径。每次回答控制在200字以内。""",
-        model_config_name="deepseek_political"
+        model_config_name="deepseek_political",
+        to_print=False  # 禁用自动打印
     )
     
     # 社会学家智能体（使用阿里云千问）
@@ -107,7 +168,8 @@ def create_agents(model_configs):
 - 注重实地调研和社会现象观察
 
 请从社会文化角度分析，关注社会接受度和文化兼容性。每次回答控制在200字以内。""",
-        model_config_name="qwen_sociologist"
+        model_config_name="qwen_sociologist",
+        to_print=False  # 禁用自动打印
     )
     
     return economist, political_scientist, sociologist
@@ -148,22 +210,19 @@ def run_discussion():
         
         # 经济学家先发言
         print(f"\n💼 {economist.name}的观点:")
-        economist_response = economist(msg)
-        print(f"{economist_response.content}")
+        economist_response = get_streaming_response(economist, msg)
         
         time.sleep(1)  # 避免请求过快
         
         # 政治学者发言
         print(f"\n🏛️ {political_scientist.name}的观点:")
-        political_response = political_scientist(msg)
-        print(f"{political_response.content}")
+        political_response = get_streaming_response(political_scientist, msg)
         
         time.sleep(1)
         
         # 社会学家发言
         print(f"\n👥 {sociologist.name}的观点:")
-        sociology_response = sociologist(msg)
-        print(f"{sociology_response.content}")
+        sociology_response = get_streaming_response(sociologist, msg)
         
         time.sleep(2)  # 话题间间隔
     
@@ -177,20 +236,17 @@ def run_discussion():
     summary_msg = Msg("user", summary_prompt, "user")
     
     print(f"\n💼 {economist.name}总结:")
-    economist_summary = economist(summary_msg)
-    print(f"{economist_summary.content}")
+    economist_summary = get_streaming_response(economist, summary_msg)
     
     time.sleep(1)
     
     print(f"\n🏛️ {political_scientist.name}总结:")
-    political_summary = political_scientist(summary_msg)
-    print(f"{political_summary.content}")
+    political_summary = get_streaming_response(political_scientist, summary_msg)
     
     time.sleep(1)
     
     print(f"\n👥 {sociologist.name}总结:")
-    sociology_summary = sociologist(summary_msg)
-    print(f"{sociology_summary.content}")
+    sociology_summary = get_streaming_response(sociologist, summary_msg)
     
     print(f"\n{'='*60}")
     print("✅ 混合智能体讨论完成！")
