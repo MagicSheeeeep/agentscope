@@ -9,6 +9,9 @@ import agentscope
 from agentscope.agents import DialogAgent, UserAgent
 import requests
 import time
+import os
+import glob
+import json
 
 # 阿里云DashScope配置
 MODEL_CONFIG = [
@@ -58,11 +61,16 @@ def test_studio_connection():
     try:
         print("\n🔧 初始化AgentScope并连接到Studio...")
         
+        # 清理之前的连接（重要：避免冲突）
+        if hasattr(agentscope, '_manager') and agentscope._manager:
+            agentscope._manager.flush()
+        
         # 初始化AgentScope，连接到Studio
         agentscope.init(
             model_configs=MODEL_CONFIG,
             project="Studio可视化测试",
             save_api_invoke=True,              # 保存API调用记录
+            save_log=True,                     # 启用日志保存
             studio_url="http://localhost:3000", # 连接到Studio
             use_monitor=True,                  # 启用监控
         )
@@ -70,15 +78,62 @@ def test_studio_connection():
         print("✅ AgentScope 初始化成功！")
         print("📊 已连接到Studio，可视化界面将显示对话过程")
         
+        # 等待目录创建
+        time.sleep(3)
+        
         # 从最新的runs目录获取运行ID
         import os
         import glob
+        import json
         runs_dir = "runs"
         if os.path.exists(runs_dir):
             run_dirs = glob.glob(os.path.join(runs_dir, "run_*"))
             if run_dirs:
                 latest_run_dir = max(run_dirs, key=os.path.getmtime)
                 run_id = os.path.basename(latest_run_dir)
+                
+                # 修复配置文件中的studio_url（重要修复）
+                config_file = os.path.join(latest_run_dir, ".config")
+                if os.path.exists(config_file):
+                    try:
+                        with open(config_file, 'r') as f:
+                            config = json.load(f)
+                        
+                        if config.get('studio_url') is None:
+                            config['studio_url'] = "http://localhost:3000"
+                            config['monitor']['use_monitor'] = True
+                            
+                            with open(config_file, 'w') as f:
+                                json.dump(config, f, indent=4)
+                            print("🔧 已修复配置文件中的studio_url")
+                    except Exception as config_error:
+                        print(f"⚠️ 配置文件修复失败: {config_error}")
+                
+                # 手动注册运行到Studio（确保Studio识别这个运行）
+                register_data = {
+                    "id": run_id,
+                    "project": "Studio可视化测试",
+                    "name": run_id.split('_')[-1],
+                    "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
+                    "run_dir": os.path.abspath(latest_run_dir),
+                    "pid": os.getpid(),
+                    "status": "running"
+                }
+                
+                try:
+                    register_response = requests.post(
+                        "http://localhost:3000/trpc/registerRun",
+                        json=register_data,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    if register_response.status_code == 200:
+                        print("✅ 运行已成功注册到Studio")
+                    else:
+                        print(f"⚠️ 运行注册失败: {register_response.text}")
+                except Exception as reg_error:
+                    print(f"⚠️ 运行注册异常: {reg_error}")
+                
                 # 使用正确的 dashboard URL 格式
                 studio_url = f"http://localhost:3000/dashboard?run_id={run_id}"
                 dashboard_main = "http://localhost:3000/dashboard"
@@ -87,7 +142,7 @@ def test_studio_connection():
                 print(f"📱 方式1 - 直接访问: {studio_url}")
                 print(f"📱 方式2 - Dashboard: {dashboard_main}")
                 print("⚠️  注意：使用 /dashboard 路径，避免重定向问题")
-                print("💡 请复制上面的URL到浏览器中打开")
+                print("💡 请复制上面的URL到浏览器中打开，然后开始对话测试")
             else:
                 studio_url = "http://localhost:3000/dashboard"
                 print(f"\n📱 Studio界面地址: {studio_url}")

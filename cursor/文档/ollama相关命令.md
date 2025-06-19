@@ -50,6 +50,10 @@ ollama run llama3.2:3b
 ```bash
 ollama run qwen3:8b
 ```
+```bash
+ollama run deepseek-r1:8b
+```
+
 
 ### 运行模型并直接提问
 ```bash

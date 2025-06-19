@@ -34,8 +34,8 @@ def main():
         agentscope.init(
             model_configs=MODEL_CONFIG,
             project="纯命令行对话",
-            save_api_invoke=False,    # 不保存API调用记录
-            use_monitor=False,        # 不启用监控
+            save_api_invoke=True,    # 不保存API调用记录
+            use_monitor=True,        # 不启用监控
             # 不设置studio_url，避免Studio连接
         )
         
