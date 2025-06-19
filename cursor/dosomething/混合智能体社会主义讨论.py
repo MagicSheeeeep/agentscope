@@ -27,11 +27,11 @@ def setup_models():
             "keep_alive": "5m"
         },
         
-        # 本地ollama模型2 - qwen3:8b (扮演政治学者)  
+        # 本地ollama模型2 - deepseek-r1:8b (扮演政治学者)
         {
-            "config_name": "qwen_political",
+            "config_name": "deepseek_political",
             "model_type": "ollama_chat", 
-            "model_name": "qwen3:8b",
+            "model_name": "deepseek-r1:8b",
             "options": {
                 "temperature": 0.8
             },
@@ -91,7 +91,7 @@ def create_agents(model_configs):
 - 严谨客观，基于学术研究
 
 请从政治制度角度分析，关注实施的政治障碍和可能路径。每次回答控制在200字以内。""",
-        model_config_name="qwen_political"
+        model_config_name="deepseek_political"
     )
     
     # 社会学家智能体（使用阿里云千问）
@@ -212,7 +212,7 @@ def run_moa_analysis():
     # 创建MoA实例，使用所有三个模型
     moa_module = MixtureOfAgents(
         main_model="qwen_sociologist",  # 使用阿里云千问作为主模型
-        reference_models=["llama_economist", "qwen_political", "qwen_sociologist"],
+        reference_models=["llama_economist", "deepseek_political", "qwen_sociologist"],
         show_internal=True,  # 显示内部推理过程
         rounds=1  # 使用1轮推理
     )
