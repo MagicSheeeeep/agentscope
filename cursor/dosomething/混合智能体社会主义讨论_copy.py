@@ -17,9 +17,9 @@ import sys
 def setup_models():
     """配置三个不同的模型"""
     model_configs = [
-        # 本地ollama模型1 - llama3.2:3b (扮演正方学者)
+        # 本地ollama模型1 - llama3.2:3b (扮演经济学家)
         {
-            "config_name": "llama_pro",
+            "config_name": "llama_economist",
             "model_type": "ollama_chat",
             "model_name": "llama3.2:3b",
             "options": {
@@ -29,21 +29,9 @@ def setup_models():
             "stream": True  # 启用流式输出
         },
         
-        # 阿里云千问模型 (扮演反方学者)
+        # 本地ollama模型2 - deepseek-r1:8b (扮演政治学者)
         {
-            "config_name": "qwen_con", 
-            "model_type": "dashscope_chat",
-            "model_name": "qwen-max",
-            "api_key": "sk-cc1605a341c4450489bd71ffc28238c0",  # 请替换为您的真实API密钥
-            "generate_args": {
-                "temperature": 0.6,
-                "stream": True  # 启用流式输出
-            }
-        },
-        
-        # 本地ollama模型2 - deepseek-r1:8b (扮演裁判)
-        {
-            "config_name": "deepseek_judge",
+            "config_name": "deepseek_political",
             "model_type": "ollama_chat", 
             "model_name": "deepseek-r1:8b",
             "options": {
@@ -51,6 +39,18 @@ def setup_models():
             },
             "keep_alive": "5m",
             "stream": True  # 启用流式输出
+        },
+        
+        # 阿里云千问模型 (扮演社会学家)
+        {
+            "config_name": "qwen_sociologist", 
+            "model_type": "dashscope_chat",
+            "model_name": "qwen-max",
+            "api_key": "sk-cc1605a341c4450489bd71ffc28238c0",  # 请替换为您的真实API密钥
+            "generate_args": {
+                "temperature": 0.6,
+                "stream": True  # 启用流式输出
+            }
         }
     ]
     
@@ -118,151 +118,140 @@ def create_agents(model_configs):
     # 初始化AgentScope
     agentscope.init(
         model_configs=model_configs,
-        project="美国社会主义化可行性辩论"
+        project="美国社会主义化可行性讨论"
     )
     
-    # 正方学者（使用llama3.2:3b）
-    pro_scholar = DialogAgent(
-        name="正方学者",
-        sys_prompt="""你是正方辩手，坚决支持美国社会主义化的可行性。你的任务是为美国实施社会主义政策进行辩护。
+    # 经济学家智能体（使用llama3.2:3b）
+    economist = DialogAgent(
+        name="经济学家",
+        sys_prompt="""你是一位资深的经济学家，专门研究经济制度和政策。你需要从经济学角度分析美国社会主义化的可行性。
 
-你的立场和论点：
-- 美国当前的资本主义制度存在严重不平等问题，需要社会主义改革
-- 社会主义政策能够更好地保障民众福利和社会公平
-- 许多发达国家的社会主义元素已经证明了其有效性
-- 美国有足够的经济基础和政治制度来支持渐进式社会主义化
-- 年轻一代对社会主义的支持率不断上升
+你的特点：
+- 注重数据和实证分析
+- 熟悉各种经济制度的优缺点
+- 关注经济效率、资源配置和市场机制
+- 会引用历史经济数据和案例
+- 客观理性，避免意识形态偏见
 
-请用坚定的语气为你的观点辩护，引用具体数据和案例支持论证。每次回答控制在250字以内。""",
-        model_config_name="llama_pro",
+请用专业的经济学术语和理论分析问题，但保持表达通俗易懂。每次回答控制在200字以内。""",
+        model_config_name="llama_economist",
         to_print=False  # 禁用自动打印
     )
     
-    # 反方学者（使用qwen-max）
-    con_scholar = DialogAgent(
-        name="反方学者", 
-        sys_prompt="""你是反方辩手，坚决反对美国社会主义化的可行性。你的任务是论证美国实施社会主义政策的不可行性。
+    # 政治学者智能体（使用qwen3:8b）
+    political_scientist = DialogAgent(
+        name="政治学者", 
+        sys_prompt="""你是一位政治学教授，专门研究政治制度、民主理论和政府治理。你需要从政治学角度分析美国社会主义化的可行性。
 
-你的立场和论点：
-- 美国的自由市场经济和个人主义文化与社会主义理念不兼容
-- 社会主义政策会降低经济效率，损害创新和竞争力
-- 历史上社会主义实验的失败案例证明了其制度缺陷
-- 美国政治体制的制衡机制使得大规模制度变革极其困难
-- 强制性财富再分配会损害个人自由和产权保护
+你的特点：
+- 深入了解美国政治体制和历史
+- 熟悉各种政治理论和制度设计
+- 关注政治可行性、制度变迁和权力结构
+- 会分析政治动力学和利益集团影响
+- 严谨客观，基于学术研究
 
-请用犀利的语气反驳对方观点，引用历史教训和经济理论支持论证。每次回答控制在250字以内。""",
-        model_config_name="qwen_con",
+请从政治制度角度分析，关注实施的政治障碍和可能路径。每次回答控制在200字以内。""",
+        model_config_name="deepseek_political",
         to_print=False  # 禁用自动打印
     )
     
-    # 裁判（使用deepseek-r1:8b）
-    judge = DialogAgent(
-        name="裁判",
-        sys_prompt="""你是一位公正的辩论裁判，专门评判学术辩论的胜负。你需要客观分析双方的论证质量。
+    # 社会学家智能体（使用阿里云千问）
+    sociologist = DialogAgent(
+        name="社会学家",
+        sys_prompt="""你是一位社会学教授，专门研究社会结构、文化变迁和社会运动。你需要从社会学角度分析美国社会主义化的可行性。
 
-你的评判标准：
-- 论证的逻辑性和说服力
-- 证据和案例的质量
-- 对对方观点的反驳有效性
-- 论述的清晰度和表达能力
-- 整体论证的完整性
+你的特点：
+- 关注社会结构、阶级关系和文化因素
+- 熟悉社会变迁理论和社会运动
+- 分析社会心理、价值观念和集体行为
+- 重视社会公平、社会凝聚力和文化适应性
+- 注重实地调研和社会现象观察
 
-请在每轮辩论后给出客观评价，指出双方的优点和不足。在最终总结时，判定哪一方胜出，并详细说明理由。保持中立态度，基于学术标准进行评判。""",
-        model_config_name="deepseek_judge",
+请从社会文化角度分析，关注社会接受度和文化兼容性。每次回答控制在200字以内。""",
+        model_config_name="qwen_sociologist",
         to_print=False  # 禁用自动打印
     )
     
-    return pro_scholar, con_scholar, judge
+    return economist, political_scientist, sociologist
 
 
-def run_debate():
-    """运行辩论赛"""
+def run_discussion():
+    """运行混合智能体讨论"""
     
-    print("🎯 辩论赛：美国社会主义化的可行性")
+    print("🎯 混合智能体对话：美国社会主义化的可行性")
     print("="*60)
     print("参与者：")
-    print("👍 正方学者 (llama3.2:3b) - 支持社会主义化")
-    print("👎 反方学者 (qwen-max) - 反对社会主义化")  
-    print("⚖️ 裁判 (deepseek-r1:8b) - 评判胜负")
+    print("🏛️ 经济学家 (llama3.2:3b)")
+    print("🗳️ 政治学者 (qwen3:8b)")  
+    print("👥 社会学家 (阿里云千问)")
     print("="*60)
     
     # 设置模型配置
     model_configs = setup_models()
     
     # 创建智能体
-    pro_scholar, con_scholar, judge = create_agents(model_configs)
+    economist, political_scientist, sociologist = create_agents(model_configs)
     
-    # 综合辩论主题
-    debate_topic = """
-请围绕"美国社会主义化的可行性"这一核心议题，从以下四个方面进行全面论述：
-
-1. 经济层面：美国实施社会主义政策的经济可行性和影响
-2. 社会文化层面：美国社会能否接受社会主义价值观
-3. 政治制度层面：美国现有政治体制与社会主义的兼容性
-4. 实施路径：如果要推进，应采取什么具体策略和步骤
-
-请提供完整、深入的分析，包括关键论据和具体案例。
-"""
+    # 讨论主题和问题
+    topics = [
+        "美国实施社会主义政策的经济可行性如何？需要考虑哪些经济因素？",
+        "从政治制度角度看，美国推行社会主义化面临哪些主要障碍？",
+        "美国社会文化对社会主义理念的接受度如何？什么因素影响社会认同？",
+        "如果要在美国推进社会主义化，应该采取什么样的渐进策略？"
+    ]
     
-    print(f"\n🎯 辩论开始")
-    print("="*50)
-    
-    # 正方立论
-    print(f"\n👍 {pro_scholar.name}立论:")
-    pro_msg = Msg("user", debate_topic, "user")
-    pro_response = get_streaming_response(pro_scholar, pro_msg)
-    
-    time.sleep(2)
-    
-    # 反方反驳
-    con_prompt = f"""
-辩论主题：美国社会主义化的可行性
-
-正方刚才提出了以下观点：
-{pro_response.content}
-
-请你作为反方，针对正方的论点进行全面反驳，并提出你的反对理由。同样需要从经济、社会文化、政治制度、实施路径四个方面进行论述。
-"""
-    
-    print(f"\n👎 {con_scholar.name}反驳:")
-    con_msg = Msg("user", con_prompt, "user")
-    con_response = get_streaming_response(con_scholar, con_msg)
-    
-    time.sleep(2)
-    
-    # 裁判最终判决
-    judge_prompt = f"""
-作为辩论裁判，请对这场关于"美国社会主义化可行性"的辩论进行最终评判：
-
-正方观点：
-{pro_response.content}
-
-反方观点：
-{con_response.content}
-
-请从以下方面进行综合评价：
-1. 论证逻辑的严密性和完整性
-2. 证据和案例的说服力
-3. 对关键问题的分析深度
-4. 论述的客观性和平衡性
-5. 语言表达的清晰度
-
-最终请：
-- 判定哪一方获胜并详细说明理由
-- 总结双方的核心观点和主要分歧
-- 对这个议题给出你的客观分析
-
-控制在500字以内。
-"""
-    
-    print(f"\n⚖️ {judge.name}最终裁决:")
-    judge_msg = Msg("user", judge_prompt, "user")
-    final_judgment = get_streaming_response(judge, judge_msg)
+    # 开始讨论
+    for i, topic in enumerate(topics, 1):
+        print(f"\n📍 讨论话题 {i}: {topic}")
+        print("-"*50)
+        
+        # 每个话题让三个智能体轮流发言
+        msg = Msg("user", topic, "user")
+        
+        # 经济学家先发言
+        print(f"\n💼 {economist.name}的观点:")
+        economist_response = get_streaming_response(economist, msg)
+        
+        time.sleep(1)  # 避免请求过快
+        
+        # 政治学者发言
+        print(f"\n🏛️ {political_scientist.name}的观点:")
+        political_response = get_streaming_response(political_scientist, msg)
+        
+        time.sleep(1)
+        
+        # 社会学家发言
+        print(f"\n👥 {sociologist.name}的观点:")
+        sociology_response = get_streaming_response(sociologist, msg)
+        
+        time.sleep(2)  # 话题间间隔
     
     print(f"\n{'='*60}")
-    print("🎉 辩论赛结束！")
-    print("💡 本次辩论展示了如何使用不同AI模型进行学术辩论，")
-    print("   包括正反双方的观点交锋和公正的裁判评价。")
+    print("🎯 讨论总结")
+    print("="*60)
+    
+    # 让三个智能体进行最终总结
+    summary_prompt = """基于前面的讨论，请从你的专业角度对"美国社会主义化的可行性"给出一个简洁的总结性观点，包括主要机遇和挑战。控制在150字以内。"""
+    
+    summary_msg = Msg("user", summary_prompt, "user")
+    
+    print(f"\n💼 {economist.name}总结:")
+    economist_summary = get_streaming_response(economist, summary_msg)
+    
+    time.sleep(1)
+    
+    print(f"\n🏛️ {political_scientist.name}总结:")
+    political_summary = get_streaming_response(political_scientist, summary_msg)
+    
+    time.sleep(1)
+    
+    print(f"\n👥 {sociologist.name}总结:")
+    sociology_summary = get_streaming_response(sociologist, summary_msg)
+    
+    print(f"\n{'='*60}")
+    print("✅ 混合智能体讨论完成！")
+    print("💡 本次讨论展示了如何使用不同模型（本地ollama + 云端API）")
+    print("   从多个学科角度分析复杂的社会政治经济问题。")
 
 
 def run_moa_analysis():
@@ -327,8 +316,8 @@ def run_moa_analysis():
 
 if __name__ == "__main__":
     try:
-        # 运行辩论赛
-        run_debate()
+        # 运行多智能体讨论
+        run_discussion()
         
         # 询问是否进行MoA分析
         print(f"\n{'='*60}")
